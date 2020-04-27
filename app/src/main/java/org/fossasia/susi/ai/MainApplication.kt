@@ -4,11 +4,13 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.support.v7.app.AppCompatDelegate
 import android.util.Log
-
+import com.facebook.stetho.Stetho
 import com.squareup.leakcanary.LeakCanary
-
 import io.realm.Realm
 import io.realm.RealmConfiguration
+import org.fossasia.susi.ai.di.modules
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
 import timber.log.Timber
 
 class MainApplication : Application() {
@@ -25,6 +27,10 @@ class MainApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        startKoin {
+            androidContext(this@MainApplication)
+            modules(listOf(modules))
+        }
 
         if (LeakCanary.isInAnalyzerProcess(this)) {
             // This process is dedicated to LeakCanary for heap analysis.
@@ -41,15 +47,17 @@ class MainApplication : Application() {
 
         if (BuildConfig.DEBUG) {
             Timber.plant(object : Timber.DebugTree() {
-                //Add the line number to the tag
+                // Add the line number to the tag
                 override fun createStackElementTag(element: StackTraceElement): String? {
                     return super.createStackElementTag(element) + ": " + element.lineNumber
                 }
             })
         } else {
-            //Release mode
+            // Release mode
             Timber.plant(ReleaseLogTree())
         }
+
+        Stetho.initializeWithDefaults(this)
     }
 
     private class ReleaseLogTree : Timber.Tree() {

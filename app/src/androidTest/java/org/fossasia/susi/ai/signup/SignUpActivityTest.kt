@@ -9,13 +9,13 @@ import android.support.test.filters.MediumTest
 import android.support.test.rule.ActivityTestRule
 import android.support.test.runner.AndroidJUnit4
 import android.view.WindowManager
+import java.io.IOException
 import org.fossasia.susi.ai.R
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import timber.log.Timber
-import java.io.IOException
 
 /**
  * Created by collinx on 22-10-2017.
@@ -54,13 +54,13 @@ class SignUpActivityTest {
         onView(withId(R.id.password)).check(matches(isDisplayed()))
 
         // checks if confirm password button is present
-        onView(withId(R.id.confirm_password)).check(matches(isDisplayed()))
+        onView(withId(R.id.confirmPassword)).check(matches(isDisplayed()))
 
         // checks if checkbox is present
-        onView(withId(R.id.customer_server)).check(matches(isDisplayed()))
+        onView(withId(R.id.customServerSignUp)).check(matches(isDisplayed()))
 
         // checks if sign up button is present
-        onView(withId(R.id.sign_up)).perform(scrollTo())
-        onView(withId(R.id.sign_up)).check(matches(isDisplayed()))
+        onView(withId(R.id.signUp)).perform(scrollTo())
+        onView(withId(R.id.signUp)).check(matches(isDisplayed()))
     }
 }

@@ -4,7 +4,7 @@
     android:id="@+id/coordinator_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/default_bg">
+    android:background="@color/md_white_1000">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -12,13 +12,60 @@
         app:layout_behavior="org.fossasia.susi.ai.helper.SnackbarBehavior"
         tools:context=".chat.ChatActivity">
 
+        <EditText
+            android:id="@+id/chatSearchInput"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/height_large"
+            android:layout_marginLeft="@dimen/margin_medium"
+            android:layout_marginTop="@dimen/margin_medium"
+            android:layout_marginRight="@dimen/margin_extremely_large"
+            android:hint="Search Chat Messages"
+            android:imeOptions="actionSearch"
+            android:paddingLeft="@dimen/padding_moderate"
+            android:singleLine="true"
+            android:textSize="@dimen/text_size_normal"
+            android:visibility="gone" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_above="@id/rv_chat_feed"
+            android:background="@color/md_grey_300" />
+
         <android.support.v7.widget.RecyclerView
             android:id="@+id/rv_chat_feed"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_above="@+id/sendMessageLayout"
-            android:layout_alignParentTop="true"
+            android:layout_below="@+id/chatSearchInput"
+            android:background="@color/default_bg"
             android:scrollbars="vertical" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/searchChat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:onClick="openChatSearch"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:layout_margin="@dimen/margin_moderate"
+            app:backgroundTint="@color/md_white_1000"
+            app:fabSize="mini"
+            app:srcCompat="@drawable/ic_open_search" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/voiceSearchChat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_below="@id/searchChat"
+            android:layout_margin="@dimen/margin_moderate"
+            android:onClick="openVoiceSearch"
+            app:backgroundTint="@color/md_white_1000"
+            app:fabSize="mini"
+            app:srcCompat="@drawable/ic_mic_24dp" />
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/fabsetting"
@@ -26,7 +73,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
             android:layout_alignParentRight="true"
-            android:layout_alignParentTop="true"
+            android:layout_below="@id/voiceSearchChat"
             android:layout_margin="@dimen/margin_moderate"
             android:onClick="openSettings"
             app:backgroundTint="@color/colorPrimaryDark"

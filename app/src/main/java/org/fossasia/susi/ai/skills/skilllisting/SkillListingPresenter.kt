@@ -8,11 +8,14 @@ import org.fossasia.susi.ai.dataclasses.SkillMetricsDataQuery
 import org.fossasia.susi.ai.dataclasses.SkillsBasedOnMetrics
 import org.fossasia.susi.ai.helper.Constant
 import org.fossasia.susi.ai.helper.PrefManager
-import org.fossasia.susi.ai.rest.responses.susi.Metrics
 import org.fossasia.susi.ai.rest.responses.susi.ListGroupsResponse
 import org.fossasia.susi.ai.rest.responses.susi.ListSkillMetricsResponse
 import org.fossasia.susi.ai.rest.responses.susi.ListSkillsResponse
+import org.fossasia.susi.ai.rest.responses.susi.Metrics
 import org.fossasia.susi.ai.rest.responses.susi.SkillData
+import org.fossasia.susi.ai.skills.SkillsActivity.Companion.DURATION
+import org.fossasia.susi.ai.skills.SkillsActivity.Companion.FILTER_NAME
+import org.fossasia.susi.ai.skills.SkillsActivity.Companion.FILTER_TYPE
 import org.fossasia.susi.ai.skills.skilllisting.contract.ISkillListingPresenter
 import org.fossasia.susi.ai.skills.skilllisting.contract.ISkillListingView
 import retrofit2.Response
@@ -45,19 +48,20 @@ class SkillListingPresenter(val skillListingFragment: SkillListingFragment) : IS
     }
 
     override fun getMetrics(swipeToRefreshActive: Boolean) {
-        skillListingView?.visibilityProgressBar(!swipeToRefreshActive)
         val queryObject = SkillMetricsDataQuery("general", PrefManager.getString(Constant.LANGUAGE, Constant.DEFAULT))
         skillListingModel.fetchSkillMetrics(queryObject, this)
     }
 
     override fun onGroupFetchSuccess(response: Response<ListGroupsResponse>) {
+        if (skillListingView == null)
+            return
         val groupsResponse = response.body()
         if (response.isSuccessful && groupsResponse != null) {
             Timber.d("GROUPS FETCHED")
             groupsCount = groupsResponse.groups.size
             metrics.groups = groupsResponse.groups as MutableList<String>
             skillListingView?.updateAdapter(metrics)
-            skillListingModel.fetchSkills(metrics.groups[0], PrefManager.getString(Constant.LANGUAGE, Constant.DEFAULT), this)
+            skillListingModel.fetchSkills(metrics.groups[0], PrefManager.getString(Constant.LANGUAGE, Constant.DEFAULT), FILTER_NAME, FILTER_TYPE, DURATION, this)
         } else {
             Timber.d("GROUPS NOT FETCHED")
             skillListingView?.visibilityProgressBar(false)
@@ -71,6 +75,8 @@ class SkillListingPresenter(val skillListingFragment: SkillListingFragment) : IS
     }
 
     override fun onSkillFetchSuccess(response: Response<ListSkillsResponse>, group: String) {
+        if (skillListingView == null)
+            return
         val skillsResponse = response.body()
         skillListingView?.visibilityProgressBar(false)
         if (response.isSuccessful && skillsResponse != null) {
@@ -80,7 +86,7 @@ class SkillListingPresenter(val skillListingFragment: SkillListingFragment) : IS
                 skills.add(Pair(group, responseSkillMap))
             }
             if (count != groupsCount) {
-                skillListingModel.fetchSkills(metrics.groups[count], PrefManager.getString(Constant.LANGUAGE, Constant.DEFAULT), this)
+                skillListingModel.fetchSkills(metrics.groups[count], PrefManager.getString(Constant.LANGUAGE, Constant.DEFAULT), FILTER_NAME, FILTER_TYPE, DURATION, this)
                 count++
             } else {
                 skillListingFragment.updateSkillsAdapter(skills)
@@ -98,6 +104,8 @@ class SkillListingPresenter(val skillListingFragment: SkillListingFragment) : IS
     }
 
     override fun onSkillMetricsFetchSuccess(response: Response<ListSkillMetricsResponse>) {
+        if (skillListingView == null)
+            return
         val skillsMetricsResponse = response.body()
         skillListingView?.visibilityProgressBar(false)
         if (response.isSuccessful && skillsMetricsResponse != null) {
@@ -107,7 +115,7 @@ class SkillListingPresenter(val skillListingFragment: SkillListingFragment) : IS
                 metrics.metricsList.clear()
                 metrics.metricsGroupTitles.clear()
                 if (metricsData?.staffPicks != null && metricsData?.staffPicks?.size != null) {
-                    //TODO : Make this comparison null safe
+                    // TODO : Make this comparison null safe
                     if (metricsData?.staffPicks?.size!! > 0) {
                         metrics.metricsGroupTitles.add(utilModel.getString(R.string.metric_staff_picks))
                         metrics.metricsList.add(metricsData?.staffPicks)

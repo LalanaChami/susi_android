@@ -11,6 +11,7 @@ import android.support.test.rule.ActivityTestRule
 import android.support.test.rule.GrantPermissionRule
 import android.support.test.runner.AndroidJUnit4
 import android.view.WindowManager
+import java.io.IOException
 import org.fossasia.susi.ai.R
 import org.junit.Before
 import org.junit.Rule
@@ -18,7 +19,6 @@ import org.junit.Test
 import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import timber.log.Timber
-import java.io.IOException
 
 /**
  * Created by collinx on 22-10-2017.
@@ -65,17 +65,17 @@ class LoginActivityTest {
         onView(withId(R.id.password)).check(matches(isDisplayed()))
 
         // checks if login button is present
-        onView(withId(R.id.log_in)).check(matches(isDisplayed()))
+        onView(withId(R.id.logIn)).check(matches(isDisplayed()))
 
         // checks if forgot password button is present
-        onView(withId(R.id.forgot_password)).check(matches(isDisplayed()))
+        onView(withId(R.id.forgotPassword)).check(matches(isDisplayed()))
 
         // checks if checkbox is present
         onView(withId(R.id.customer_server)).check(matches(isDisplayed()))
 
         // checks if sign up button is present
-        onView(withId(R.id.sign_up)).perform(scrollTo())
-        onView(withId(R.id.sign_up)).check(matches(isDisplayed()))
+        onView(withId(R.id.signUp)).perform(scrollTo())
+        onView(withId(R.id.signUp)).check(matches(isDisplayed()))
 
         // checks if skip button is present
         onView(withId(R.id.skip)).perform(scrollTo())

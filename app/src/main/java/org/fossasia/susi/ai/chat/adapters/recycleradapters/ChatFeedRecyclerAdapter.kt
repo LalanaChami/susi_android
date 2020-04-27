@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.support.v7.widget.RecyclerView
+import android.text.method.LinkMovementMethod
 import android.util.Pair
 import android.util.Patterns
 import android.view.Gravity
@@ -13,7 +14,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Toast
-
+import io.realm.OrderedRealmCollection
+import io.realm.Realm
+import io.realm.RealmChangeListener
+import io.realm.RealmRecyclerViewAdapter
+import io.realm.RealmResults
+import java.util.ArrayList
 import org.fossasia.susi.ai.R
 import org.fossasia.susi.ai.chat.adapters.viewholders.ChatViewHolder
 import org.fossasia.susi.ai.chat.adapters.viewholders.DateViewHolder
@@ -27,19 +33,19 @@ import org.fossasia.susi.ai.chat.adapters.viewholders.TableViewHolder
 import org.fossasia.susi.ai.chat.adapters.viewholders.TypingDotsHolder
 import org.fossasia.susi.ai.chat.adapters.viewholders.YoutubeVideoViewHolder
 import org.fossasia.susi.ai.chat.adapters.viewholders.ZeroHeightHolder
+import org.fossasia.susi.ai.data.model.ChatMessage
 import org.fossasia.susi.ai.helper.Constant
 import org.fossasia.susi.ai.helper.ConstraintsHelper
-import org.fossasia.susi.ai.data.model.ChatMessage
 
-import java.util.ArrayList
-
-import io.realm.OrderedRealmCollection
-import io.realm.Realm
-import io.realm.RealmChangeListener
-import io.realm.RealmRecyclerViewAdapter
-import io.realm.RealmResults
-
-class ChatFeedRecyclerAdapter(private val currContext: Context, data: OrderedRealmCollection<ChatMessage>?, autoUpdate: Boolean) : RealmRecyclerViewAdapter<ChatMessage, RecyclerView.ViewHolder>(data, autoUpdate), MessageViewHolder.ClickListener {
+/**
+ * <h1>Adapter to display horizontal list of chat feed.</h1>
+ */
+class ChatFeedRecyclerAdapter(
+    private val currContext: Context,
+    data: OrderedRealmCollection<ChatMessage>?,
+    autoUpdate: Boolean
+) : RealmRecyclerViewAdapter<ChatMessage, RecyclerView.ViewHolder>(data, autoUpdate),
+    MessageViewHolder.ClickListener {
     private var realm: Realm? = null
     private var lastMsgCount: Int = 0
     private var recyclerView: RecyclerView? = null
@@ -55,7 +61,7 @@ class ChatFeedRecyclerAdapter(private val currContext: Context, data: OrderedRea
 
         if (data is RealmResults) {
             data.addChangeListener(RealmChangeListener {
-                //only scroll if new is added.
+                // only scroll if new is added.
                 if (lastMsgCount < itemCount) {
                     scrollToBottom()
                 }
@@ -71,16 +77,12 @@ class ChatFeedRecyclerAdapter(private val currContext: Context, data: OrderedRea
         nullHolder = ZeroHeightHolder(view1)
     }
 
-    /**
-     * Show dots while susi is typing.
-     */
+    /** Show dots while susi is typing. */
     fun showDots() {
         isSusiTyping = true
     }
 
-    /**
-     * Hide dots when susi is not typing.
-     */
+    /** Hide dots when susi is not typing. */
     fun hideDots() {
         isSusiTyping = false
     }
@@ -244,6 +246,7 @@ class ChatFeedRecyclerAdapter(private val currContext: Context, data: OrderedRea
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (holder is ChatViewHolder) {
             holder.setView(data?.get(position), getItemViewType(position), currContext)
+            holder.chatTextView.movementMethod = LinkMovementMethod()
         } else if (holder is MapViewHolder) {
             holder.setView(data?.get(position), currContext)
         } else if (holder is YoutubeVideoViewHolder) {
@@ -315,6 +318,7 @@ class ChatFeedRecyclerAdapter(private val currContext: Context, data: OrderedRea
         // Add something here when needed
     }
 
+    @Suppress("DEPRECATION")
     private fun setBackGroundColor(holder: RecyclerView.ViewHolder, isSelected: Boolean, isUserMessage: Boolean) {
         if (holder is ChatViewHolder) {
             if (isUserMessage)

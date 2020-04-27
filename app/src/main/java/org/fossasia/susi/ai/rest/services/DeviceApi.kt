@@ -1,9 +1,9 @@
 package org.fossasia.susi.ai.rest.services
 
+import org.fossasia.susi.ai.rest.responses.others.AddRoomResponse
 import org.fossasia.susi.ai.rest.responses.others.SpeakerAuthResponse
 import org.fossasia.susi.ai.rest.responses.others.SpeakerConfigResponse
 import org.fossasia.susi.ai.rest.responses.others.SpeakerWifiResponse
-
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Query
@@ -26,4 +26,9 @@ interface DeviceApi {
         @Query("email") email: String,
         @Query("password") password: String
     ): Call<SpeakerAuthResponse>
+
+    @GET("/speaker_config")
+    fun roomDetails(
+        @Query("room_name") room_name: String
+    ): Call<AddRoomResponse>
 }

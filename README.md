@@ -18,6 +18,7 @@ Planned features & enhancements are:
 - Full-Screen Voice interaction
 - Feedback for skills.
 - Displaying SUSI skills
+- Susi Smart Speaker Configuration and Control
 
 
 ## Communication
@@ -30,19 +31,29 @@ Our chat channel is on gitter here: https://gitter.im/fossasia/susi_android
 
 <table>
   <tr>
-    <td><img src="docs/_static/login.png" height = "480" width="270"></td>
-    <td><img src="docs/_static/signup.png" height = "480" width="270"></td>
-    <td><img src="docs/_static/voice_input.png" height = "480" width="270"></td>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/login.png" height = "480" width="270"></td>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/signup.png" height = "480" width="270"></td>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/voice_input.png" height = "480" width="270"></td>
   </tr>
   <tr>
-    <td><img src="docs/_static/chat.png" height = "480" width="270"></td>
-    <td><img src="docs/_static/skills_list.png" height = "480" width="270"></td>
-    <td><img src="docs/_static/skills.png" height = "480" width="270"></td>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/chat.png" height = "480" width="270"></td>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/skills_menu.png" height = "480" width="270"></td>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/skills.png" height = "480" width="270"></td>
   </tr>
   <tr>
-    <td><img src="docs/_static/groupwise_skills.png" height = "480" width="270"></td>
-    <td><img src="docs/_static/rating_and_feedback.png" height = "480" width="270"></td>
-    <td><img src="docs/_static/settings.png" height = "480" width="270"></td>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/groupwise_skills.png" height = "480" width="270"></td>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/rating_and_feedback.png" height = "480" width="270"></td>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/devices.png" height = "480" width="270"></td>
+  </tr>
+  <tr>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/connect_to_device.png" height = "480" width="270"></td>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/set_up_wifi.png" height = "480" width="270"></td>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/room.png" height = "480" width="270"></td>
+  </tr>
+  <tr>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/settings.png" height = "480" width="270"></td>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/help.png" height = "480" width="270"></td>
+    <td><img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/privacy.png" height = "480" width="270"></td>
   </tr>
 </table>
 
@@ -59,7 +70,7 @@ Please find info about the set up of the Android app in your development environ
 - Realm [Docs](https://realm.io/docs/java/latest/)
 - Retrofit [Docs](http://square.github.io/retrofit/2.x/retrofit/)
 - ButterKnife [Docs](http://jakewharton.github.io/butterknife/javadoc/)
-- Espresso [Docs](https://google.github.io/android-testing-support-library/docs/espresso/)
+- Espresso [Docs](https://developer.android.com/training/testing/espresso)
 - Tajchert Waiting Dots [Docs](https://github.com/tajchert/WaitingDots)
 - Picasso [Docs](http://square.github.io/picasso/)
 - LeakCanary [Docs](https://github.com/square/leakcanary)
@@ -69,6 +80,7 @@ Please find info about the set up of the Android app in your development environ
 - zagum/SpeechRecognitionView [Docs](https://github.com/zagum/SpeechRecognitionView)
 - MPAndroidChart [Docs](https://github.com/PhilJay/MPAndroidChart)
 - Timber [Docs](https://github.com/JakeWharton/timber)
+- Play services authentication [Docs](https://developers.google.com/identity/smartlock-passwords/android/store-credentials)
 
 ### Project Conventions
 
@@ -102,7 +114,7 @@ Lastly, each class should only perform one task, do it well, and be unit tested 
 
 ### For first time Contributor
 
-First time contributors can read [ContributionHelp.md](docs/ContributionHelp.md) file for help regarding creating issues and sending pull requests.
+First time contributors can read [CONTRIBUTING.md](docs/CONTRIBUTING.md) file for help regarding creating issues and sending pull requests.
 
 ### Branch Policy
 
@@ -129,8 +141,6 @@ Please help us follow the best practice to make it easy for the reviewer as well
  * Follow uniform design practices. The design language must be consistent throughout the app.
  * The pull request will not get merged until and unless the commits are squashed. In case there are multiple commits on the PR, the commit author needs to squash them and not the maintainers cherrypicking and merging squashes.
  * If the PR is related to any front end change, please attach relevant screenshots in the pull request description.
-
-### Join the development
 
 * Before you join development, please set up the project on your local machine, run it and go through the application completely. Press on any button you can find and see where it leads to. Explore. (Don't worry ... Nothing will happen to the app or to you due to the exploring :wink: Only thing that will happen is, you'll be more familiar with what is where and might even get some cool ideas on how to improve various aspects of the app.)
 * If you would like to work on an issue, drop in a comment at the issue. If it is already assigned to someone, but there is no sign of any work being done, please free to drop in a comment so that the issue can be assigned to you if the previous assignee has dropped it entirely.
@@ -177,7 +187,7 @@ Go to AndroidManifest.xml and replace the ${YOUTUBE_API_KEY} with the real youtu
    
 ## For Testers: Testing the App
 If you are a tester and want to test the app, you have two ways to do that:
-1. **Installing APK on your device:** You can get debug [APK](https://github.com/fossasia/susi_android/blob/apk/susi-debug.apk) as well as Release [APK](https://github.com/fossasia/susi_android/blob/apk/susi-release.apk) in apk branch of the repository. After each PR merge, both the APKs are automatically updated. So, just download the APK you want and install it on your device. The APKs will always be the latest one.
+1. **Installing APK on your device:** You can get debug [APK](https://github.com/fossasia/susi_android/blob/apk/app-fdroid-debug.apk) as well as Release [APK](https://github.com/fossasia/susi_android/blob/apk/app-fdroid-release-unsigned.apk) in apk branch of the repository. After each PR merge, both the APKs are automatically updated. So, just download the APK you want and install it on your device. The APKs will always be the latest one.
 2. **Testing on [appetize.io](https://appetize.io/app/mbpprq4xj92c119j7nxdhttjm0):** If you don't want to download the APKs, you can simply go on [this](https://appetize.io/app/mbpprq4xj92c119j7nxdhttjm0) link and use the App on an online simulator. You will always find the latest version of App on that link because it is updated after each PR merge.
 
 ## License

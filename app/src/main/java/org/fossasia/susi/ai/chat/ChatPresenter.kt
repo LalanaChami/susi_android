@@ -1,10 +1,23 @@
 package org.fossasia.susi.ai.chat
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Context.ALARM_SERVICE
+import android.content.Intent
+import android.media.RingtoneManager
 import android.os.Handler
+import android.speech.tts.TextToSpeech
+import java.util.Date
+import java.util.LinkedList
+import java.util.Locale
+import java.util.TimeZone
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.collections.HashMap
 import org.fossasia.susi.ai.BuildConfig
 import org.fossasia.susi.ai.MainApplication
 import org.fossasia.susi.ai.R
+import org.fossasia.susi.ai.chat.ChatActivity.Companion.ALARM
 import org.fossasia.susi.ai.chat.contract.IChatPresenter
 import org.fossasia.susi.ai.chat.contract.IChatView
 import org.fossasia.susi.ai.data.ChatModel
@@ -14,23 +27,17 @@ import org.fossasia.susi.ai.data.db.ChatArgs
 import org.fossasia.susi.ai.data.db.DatabaseRepository
 import org.fossasia.susi.ai.data.db.contract.IDatabaseRepository
 import org.fossasia.susi.ai.data.model.TableItem
-import org.fossasia.susi.ai.helper.LocationHelper
-import org.fossasia.susi.ai.helper.PrefManager
-import org.fossasia.susi.ai.helper.DateTimeHelper
 import org.fossasia.susi.ai.helper.Constant
+import org.fossasia.susi.ai.helper.DateTimeHelper
+import org.fossasia.susi.ai.helper.LocationHelper
 import org.fossasia.susi.ai.helper.NetworkUtils
+import org.fossasia.susi.ai.helper.PrefManager
 import org.fossasia.susi.ai.rest.clients.BaseUrl
 import org.fossasia.susi.ai.rest.responses.others.LocationResponse
 import org.fossasia.susi.ai.rest.responses.susi.MemoryResponse
 import org.fossasia.susi.ai.rest.responses.susi.SusiResponse
 import retrofit2.Response
 import timber.log.Timber
-import java.util.LinkedList
-import java.util.Locale
-import java.util.TimeZone
-import java.util.Date
-import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.collections.HashMap
 
 /**
  * Presentation Layer for Chat View.
@@ -38,11 +45,11 @@ import kotlin.collections.HashMap
  * The P in MVP
  * Created by chiragw15 on 9/7/17.
  */
-class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingMessagesFinishedListener,
+class ChatPresenter(context: Context, private val chatView: IChatView?) :
+        IChatPresenter, IChatModel.OnRetrievingMessagesFinishedListener,
         IChatModel.OnLocationFromIPReceivedListener, IChatModel.OnMessageFromSusiReceivedListener,
         IDatabaseRepository.OnDatabaseUpdateListener {
 
-    private var chatView: IChatView? = null
     var chatModel: IChatModel = ChatModel()
     private var utilModel: UtilModel = UtilModel(context)
     private var databaseRepository: IDatabaseRepository = DatabaseRepository()
@@ -61,23 +68,22 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
     var id: Long = 0
     var identifier: String = ""
     var tableItem: TableItem? = null
+    private val youtubeVid: IYoutubeVid = YoutubeVid(context)
+    private var textToSpeech: TextToSpeech? = null
+    private val context: Context = context
+    private lateinit var handler: Handler
 
     @Volatile
     var queueExecuting = AtomicBoolean(false)
 
-    override fun onAttach(chatView: IChatView) {
-        this.chatView = chatView
-    }
-
     override fun setUp() {
 
-        //find total number of messages and find new message index
+        // find total number of messages and find new message index
         newMessageIndex = databaseRepository.getMessageCount() + 1
         PrefManager.putLong(Constant.MESSAGE_COUNT, newMessageIndex)
         micCheck = utilModel.checkMicInput()
 
         chatView?.setupAdapter(databaseRepository.getAllMessages())
-
         getPermissions()
     }
 
@@ -99,9 +105,9 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
         check = boolean
     }
 
-    //initiates hotword detection
+    // initiates hotword detection
     override fun initiateHotwordDetection() {
-        if (BuildConfig.FLAVOR.equals("fdroid"))
+        if (BuildConfig.FLAVOR == "fdroid")
             return
         val view = chatView
         if (view != null) {
@@ -156,7 +162,7 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
         }
     }
 
-    //Retrieves old Messages
+    // Retrieves old Messages
     override fun retrieveOldMessages(firstRun: Boolean) {
         if (firstRun and NetworkUtils.isNetworkConnected()) {
             chatView?.showRetrieveOldMessageProgress()
@@ -176,7 +182,7 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
             if (allMessages.isEmpty()) {
                 chatView?.showToast("No messages found")
             } else {
-                var c: Long
+                var chat: Long
                 for (i in allMessages.size - 1 downTo 0) {
                     val query = allMessages[i].query
                     val queryDate = allMessages[i].queryDate
@@ -207,7 +213,7 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
                         }
                     }
 
-                    c = newMessageIndex
+                    chat = newMessageIndex
                     databaseRepository.updateDatabase(ChatArgs(
                             prevId = newMessageIndex,
                             message = query,
@@ -219,7 +225,7 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
 
                     if (allMessages[i].answers.isEmpty()) {
                         databaseRepository.updateDatabase(ChatArgs(
-                                prevId = c,
+                                prevId = chat,
                                 message = utilModel.getString(R.string.error_internet_connectivity),
                                 date = DateTimeHelper.date,
                                 timeStamp = DateTimeHelper.currentTime,
@@ -231,26 +237,26 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
                     val actionSize = allMessages[i].answers[0].actions.size
 
                     for (j in 0 until actionSize) {
-                        val psh = ParseSusiResponseHelper()
-                        psh.parseSusiResponse(allMessages[i], j, utilModel.getString(R.string.error_occurred_try_again))
+                        val parseSusiHelper = ParseSusiResponseHelper()
+                        parseSusiHelper.parseSusiResponse(allMessages[i], j, utilModel.getString(R.string.error_occurred_try_again))
                         try {
-                            databaseRepository.updateDatabase(ChatArgs(prevId = c,
-                                    message = psh.answer,
+                            databaseRepository.updateDatabase(ChatArgs(prevId = chat,
+                                    message = parseSusiHelper.answer,
                                     date = DateTimeHelper.getDate(answerDate),
                                     timeStamp = DateTimeHelper.getTime(answerDate),
-                                    actionType = psh.actionType,
-                                    mapData = psh.mapData,
-                                    isHavingLink = psh.isHavingLink,
-                                    datumList = psh.datumList,
-                                    webSearch = psh.webSearch,
-                                    tableItem = psh.tableData,
-                                    identifier = psh.identifier,
+                                    actionType = parseSusiHelper.actionType,
+                                    mapData = parseSusiHelper.mapData,
+                                    isHavingLink = parseSusiHelper.isHavingLink,
+                                    datumList = parseSusiHelper.datumList,
+                                    webSearch = parseSusiHelper.webSearch,
+                                    tableItem = parseSusiHelper.tableData,
+                                    identifier = parseSusiHelper.identifier,
                                     skillLocation = allMessages[i].answers[0].skills[0]),
                                     this)
                         } catch (e: Exception) {
-                            Timber.e(e)
+                            Timber.e("Error occured while updating the database - " + e)
                             databaseRepository.updateDatabase(ChatArgs(
-                                    prevId = c,
+                                    prevId = chat,
                                     message = utilModel.getString(R.string.error_internet_connectivity),
                                     date = DateTimeHelper.date,
                                     timeStamp = DateTimeHelper.currentTime,
@@ -273,7 +279,7 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
         chatView?.hideRetrieveOldMessageProgress()
     }
 
-    //Gets Location of user using his IP Address
+    // Gets Location of user using his IP Address
     override fun getLocationFromIP() {
         chatModel.getLocationFromIP(this)
     }
@@ -282,10 +288,10 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
         val locationResponse = response.body()
         if (response.isSuccessful && locationResponse != null) {
             try {
-                val loc = locationResponse.loc
-                val s = loc.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-                latitude = s[0].toDouble()
-                longitude = s[1].toDouble()
+                val location = locationResponse.loc
+                val split = location.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                latitude = split[0].toDouble()
+                longitude = split[1].toDouble()
                 source = Constant.IP
                 countryCode = locationResponse.country
                 val locale = Locale("", countryCode)
@@ -296,7 +302,7 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
         }
     }
 
-    //Gets Location of user using gps and network
+    // Gets Location of user using gps and network
     override fun getLocationFromLocationService() {
         locationHelper = LocationHelper(MainApplication.instance.applicationContext)
         getLocation()
@@ -311,7 +317,7 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
         }
     }
 
-    //get undelivered messages from database
+    // get undelivered messages from database
     override fun getUndeliveredMessages() {
         nonDeliveredMessages.clear()
 
@@ -320,7 +326,7 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
         nonDelivered.mapTo(nonDeliveredMessages) { Pair(it.content, it.id) }
     }
 
-    //sends message to susi
+    // sends message to susi
     override fun sendMessage(query: String, actual: String) {
         addToNonDeliveredList(query, actual)
         ComputeThread().start()
@@ -378,13 +384,13 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
         if (!nonDeliveredMessages.isEmpty()) {
             if (NetworkUtils.isNetworkConnected()) {
                 chatView?.showWaitingDots()
-                val tz = TimeZone.getDefault()
+                val timeZone = TimeZone.getDefault()
                 val now = Date()
-                val timezoneOffset = -1 * (tz.getOffset(now.time) / 60000)
+                val timeZoneOffset = -1 * (timeZone.getOffset(now.time) / 60000)
                 val query = nonDeliveredMessages.first.first
                 val language = if (PrefManager.getString(Constant.LANGUAGE, Constant.DEFAULT) == Constant.DEFAULT) Locale.getDefault().language else PrefManager.getString(Constant.LANGUAGE, Constant.DEFAULT)
                 val data: MutableMap<String, String?> = HashMap()
-                data["timezoneOffset"] = timezoneOffset.toString()
+                data["timezoneOffset"] = timeZoneOffset.toString()
                 data["longitude"] = longitude.toString()
                 data["latitude"] = latitude.toString()
                 data["geosource"] = source
@@ -432,7 +438,6 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
     }
 
     override fun onSusiMessageReceivedSuccess(response: Response<SusiResponse>?) {
-
         if (nonDeliveredMessages.isEmpty())
             return
 
@@ -455,61 +460,18 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
 
             val actionSize = susiResponse.answers[0].actions.size
             val date = susiResponse.answerDate
+            var planDelay = 0L
 
             for (i in 0 until actionSize) {
-                val delay = susiResponse.answers[0].actions[i].delay
-                val handler = Handler()
-                handler.postDelayed({
-                    val psh = ParseSusiResponseHelper()
-                    psh.parseSusiResponse(susiResponse, i, utilModel.getString(R.string.error_occurred_try_again))
 
-                    var setMessage = psh.answer
-                    if (psh.actionType == Constant.TABLE) {
-                        tableItem = psh.tableData
-                    } else if (psh.actionType == Constant.VIDEOPLAY || psh.actionType == Constant.AUDIOPLAY) {
-                        // Play youtube video
-                        identifier = psh.identifier
-                        chatView?.playVideo(identifier)
-                    } else if (psh.actionType == Constant.ANSWER && (PrefManager.checkSpeechOutputPref() && check || PrefManager.checkSpeechAlwaysPref())) {
-                        setMessage = psh.answer
-
-                        var speechReply = setMessage
-                        if (psh.isHavingLink) {
-                            speechReply = setMessage.substring(0, setMessage.indexOf("http"))
-                        }
-                        chatView?.voiceReply(speechReply, susiResponse.answers[0].actions[i].language)
-                    } else if (psh.actionType == Constant.STOP) {
-                        setMessage = psh.stop
-                        chatView?.stopMic()
-                    }
-                    try {
-                        databaseRepository.updateDatabase(ChatArgs(
-                                prevId = id,
-                                message = setMessage,
-                                date = DateTimeHelper.getDate(date),
-                                timeStamp = DateTimeHelper.getTime(date),
-                                actionType = psh.actionType,
-                                mapData = psh.mapData,
-                                isHavingLink = psh.isHavingLink,
-                                datumList = psh.datumList,
-                                webSearch = psh.webSearch,
-                                tableItem = tableItem,
-                                identifier = identifier,
-                                skillLocation = susiResponse.answers[0].skills[0]
-                        ), this)
-                    } catch (e: Exception) {
-                        Timber.e(e)
-                        databaseRepository.updateDatabase(ChatArgs(
-                                prevId = id,
-                                message = utilModel.getString(R.string.error_internet_connectivity),
-                                date = DateTimeHelper.date,
-                                timeStamp = DateTimeHelper.currentTime,
-                                actionType = Constant.ANSWER
-                        ), this)
-                    }
-                }, delay)
+                if (susiResponse.answers[0].actions[i].plan_delay.toString().isNullOrEmpty()) {
+                    planDelay = 0L
+                } else {
+                    planDelay = susiResponse.answers[0].actions[i].plan_delay
+                }
+                executeTask(planDelay, susiResponse, i, date)
+                chatView?.hideWaitingDots()
             }
-            chatView?.hideWaitingDots()
         } else {
             if (!NetworkUtils.isNetworkConnected()) {
                 nonDeliveredMessages.addFirst(Pair(query, id))
@@ -528,11 +490,83 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
         computeOtherMessage()
     }
 
+    override fun executeTask(planDelay: Long, susiResponse: SusiResponse, i: Int, date: String) {
+        handler = Handler()
+        try {
+            handler.postDelayed({
+                val parseSusiHelper = ParseSusiResponseHelper()
+                parseSusiHelper.parseSusiResponse(susiResponse, i, utilModel.getString(R.string.error_occurred_try_again))
+                var setMessage = parseSusiHelper.answer
+
+                if (parseSusiHelper.actionType == Constant.TABLE) {
+                    tableItem = parseSusiHelper.tableData
+                } else if (parseSusiHelper.actionType == Constant.VIDEOPLAY || parseSusiHelper.actionType == Constant.AUDIOPLAY) {
+                    // Play youtube video
+                    identifier = parseSusiHelper.identifier
+                    youtubeVid.playYoutubeVid(identifier)
+                } else if (parseSusiHelper.actionType == Constant.ANSWER && (PrefManager.checkSpeechOutputPref() && check || PrefManager.checkSpeechAlwaysPref())) {
+                    setMessage = parseSusiHelper.answer
+                    try {
+                        var speechReply = setMessage
+                        Handler().post {
+                            textToSpeech = TextToSpeech(context, TextToSpeech.OnInitListener { status ->
+                                if (status != TextToSpeech.ERROR) {
+                                    val locale = textToSpeech?.language
+                                    textToSpeech?.language = locale
+                                    textToSpeech?.speak(speechReply, TextToSpeech.QUEUE_FLUSH, null)
+                                    PrefManager.putBoolean(R.string.used_voice, true)
+                                }
+                            })
+                        }
+                    } catch (e: Exception) {
+                        Timber.e("Error occured while trying to start text to speech engine - " + e)
+                    }
+                } else if (parseSusiHelper.actionType == Constant.STOP) {
+                    setMessage = parseSusiHelper.stop
+                    removeCallBacks()
+                    chatView?.stopMic()
+                }
+
+                if (parseSusiHelper.answer == ALARM) {
+                    playRingTone()
+                }
+
+                try {
+                    databaseRepository.updateDatabase(ChatArgs(
+                            prevId = id,
+                            message = setMessage,
+                            date = DateTimeHelper.getDate(date),
+                            timeStamp = DateTimeHelper.getTime(date),
+                            actionType = parseSusiHelper.actionType,
+                            mapData = parseSusiHelper.mapData,
+                            isHavingLink = parseSusiHelper.isHavingLink,
+                            datumList = parseSusiHelper.datumList,
+                            webSearch = parseSusiHelper.webSearch,
+                            tableItem = tableItem,
+                            identifier = identifier,
+                            skillLocation = susiResponse.answers[0].skills[0]
+                    ), this)
+                } catch (e: Exception) {
+                    Timber.e("Error occured while updating the database - " + e)
+                    databaseRepository.updateDatabase(ChatArgs(
+                            prevId = id,
+                            message = utilModel.getString(R.string.error_internet_connectivity),
+                            date = DateTimeHelper.date,
+                            timeStamp = DateTimeHelper.currentTime,
+                            actionType = Constant.ANSWER
+                    ), this)
+                }
+            }, planDelay)
+        } catch (e: java.lang.Exception) {
+            Timber.e("Error while showing data - " + e)
+        }
+    }
+
     override fun onDatabaseUpdateSuccess() {
         chatView?.databaseUpdated()
     }
 
-    //Asks for permissions from user
+    // Asks for permissions from user
     private fun getPermissions() {
         val permissionsRequired = utilModel.permissionsToGet()
 
@@ -555,9 +589,30 @@ class ChatPresenter(context: Context) : IChatPresenter, IChatModel.OnRetrievingM
         }
     }
 
+    override fun playRingTone() {
+        try {
+            val notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            val r = RingtoneManager.getRingtone(context, notification)
+            r.play()
+        } catch (e: Exception) {
+            Timber.e("Error playing alarm tone - " + e)
+        }
+    }
+
+    override fun removeCallBacks() {
+        handler.removeCallbacksAndMessages(null)
+        try {
+            val intent = Intent(context, ChatActivity::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(context, 123, intent, 0)
+            val alarmManager = context.getSystemService(ALARM_SERVICE) as? AlarmManager
+            alarmManager?.cancel(pendingIntent)
+        } catch (e: Exception) {
+            Timber.e("Failed to stop alarm - " + e)
+        }
+    }
+
     override fun onDetach() {
         locationHelper.removeListener()
         databaseRepository.closeDatabase()
-        chatView = null
     }
 }

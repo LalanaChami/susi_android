@@ -10,15 +10,20 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.MenuItem
 import android.view.View
+import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_sign_up.*
 import org.fossasia.susi.ai.R
-import org.fossasia.susi.ai.login.LoginActivity
+import org.fossasia.susi.ai.chat.ChatActivity
 import org.fossasia.susi.ai.helper.AlertboxHelper
 import org.fossasia.susi.ai.helper.Constant
 import org.fossasia.susi.ai.helper.CredentialHelper
 import org.fossasia.susi.ai.login.ForgotPass
+import org.fossasia.susi.ai.login.LoginActivity
 import org.fossasia.susi.ai.signup.contract.ISignUpPresenter
 import org.fossasia.susi.ai.signup.contract.ISignUpView
+import org.fossasia.susi.ai.skills.SkillsActivity
+import org.koin.android.ext.android.inject
+import org.koin.core.parameter.parametersOf
 
 /**
  * <h1>The SignUp activity.</h1>
@@ -29,7 +34,7 @@ import org.fossasia.susi.ai.signup.contract.ISignUpView
 
 class SignUpActivity : AppCompatActivity(), ISignUpView {
 
-    private lateinit var signUpPresenter: ISignUpPresenter
+    private val signUpPresenter: ISignUpPresenter by inject { parametersOf(this) }
     private lateinit var progressDialog: ProgressDialog
     private lateinit var forgotPasswordProgressDialog: Dialog
     private lateinit var builder: AlertDialog.Builder
@@ -72,15 +77,34 @@ class SignUpActivity : AppCompatActivity(), ISignUpView {
         addListeners()
 
         cancelRequestPassword()
-
-        signUpPresenter = SignUpPresenter(this)
-        signUpPresenter.onAttach(this)
     }
 
     private fun addListeners() {
         showURL()
         signUp()
+        signUpToLoginPage()
         cancelSignUp()
+        signUpToTermsConditionPage()
+        skipSignUp()
+    }
+
+    fun skipSignUp() {
+        skipSignUp.setOnClickListener {
+            val dialogClickListener = AlertDialog.Builder(this)
+            with(dialogClickListener) {
+                setTitle(R.string.dialog_skip_sign_up)
+                setMessage(R.string.error_skipping_signUp_process_text)
+                setPositiveButton(R.string.yes, DialogInterface.OnClickListener { dialog, id ->
+                    val intent = Intent(this@SignUpActivity, ChatActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                })
+                setNegativeButton(android.R.string.no, DialogInterface.OnClickListener {
+                    dialog, id -> dialog.cancel()
+                })
+                show()
+            }
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -104,7 +128,7 @@ class SignUpActivity : AppCompatActivity(), ISignUpView {
         val alertMessage = getString(R.string.error_cancelling_signUp_process_text)
         val dialogTitle = getString(R.string.dialog_cancel_sign_up)
         val successAlertboxHelper = AlertboxHelper(this@SignUpActivity, dialogTitle, alertMessage, dialogClickListener, null,
-                resources.getString(R.string.cancel), resources.getString(R.string.Continue), resources.getColor(R.color
+                resources.getString(R.string.cancel), resources.getString(R.string.stay_here), resources.getColor(R.color
                 .md_blue_500))
         successAlertboxHelper.showAlertBox()
         checkDialog = true
@@ -125,7 +149,7 @@ class SignUpActivity : AppCompatActivity(), ISignUpView {
             startActivity(intent)
             finish()
         }
-        val dialogClickListenern = DialogInterface.OnClickListener { _, _ ->
+        val dialogClickListener1 = DialogInterface.OnClickListener { _, _ ->
             val email1 = email.editText?.text.toString()
             val isPersonalServerChecked = customServerSignUp.isChecked
             val url = inputUrlSignUp.editText?.text.toString()
@@ -135,7 +159,7 @@ class SignUpActivity : AppCompatActivity(), ISignUpView {
         }
         val alertTitle = getString(R.string.error_email)
         val alertMessage = getString(R.string.error_msg)
-        val failureAlertboxHelper = AlertboxHelper(this@SignUpActivity, alertTitle, alertMessage, dialogClickListener, dialogClickListenern, resources.getString(R.string.ok), resources.getString(R.string.forgot_pass_activity), resources.getColor(R.color.md_blue_500))
+        val failureAlertboxHelper = AlertboxHelper(this@SignUpActivity, alertTitle, alertMessage, dialogClickListener, dialogClickListener1, resources.getString(R.string.ok), resources.getString(R.string.forgot_pass_activity), resources.getColor(R.color.md_blue_500))
         failureAlertboxHelper.showAlertBox()
     }
 
@@ -162,6 +186,10 @@ class SignUpActivity : AppCompatActivity(), ISignUpView {
                 Constant.PASSWORD -> password.error = getString(R.string.password_cannot_be_empty)
                 Constant.INPUT_URL -> inputUrlSignUp.error = getString(R.string.url_cannot_be_empty)
                 Constant.CONFIRM_PASSWORD -> confirmPassword.error = getString(R.string.field_cannot_be_empty)
+                Constant.ACCEPT_TERMS_AND_CONDITIONS -> {
+                    acceptTermsAndConditions.error = getString(R.string.accept_terms_and_conditions)
+                    Toast.makeText(this@SignUpActivity, R.string.accept_terms_and_conditions, Toast.LENGTH_SHORT).show()
+                }
             }
         } else {
             when (what) {
@@ -189,6 +217,24 @@ class SignUpActivity : AppCompatActivity(), ISignUpView {
         }
     }
 
+    private fun signUpToLoginPage() {
+        signUpToLogin.setOnClickListener {
+            signUpPresenter.loginLogout()
+            val intent = Intent(this@SignUpActivity, LoginActivity::class.java)
+            intent.putExtra("email", email.editText?.text.toString())
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+            startActivity(intent)
+        }
+    }
+
+    private fun signUpToTermsConditionPage() {
+        signUpToTermsCondition.setOnClickListener {
+            val intent = Intent(this@SignUpActivity, SkillsActivity::class.java)
+            intent.putExtra(Constant.SIGN_UP_TO_PRIVACY, true)
+            startActivity(intent)
+        }
+    }
+
     private fun cancelSignUp() {
         progressDialog.setOnCancelListener {
             signUpPresenter.cancelSignUp()
@@ -213,16 +259,11 @@ class SignUpActivity : AppCompatActivity(), ISignUpView {
 
             val stringEmail = email.editText?.text.toString()
             val stringPassword = password.editText?.text.toString()
-            val stringConPassword = confirmPassword.editText?.text.toString()
+            val stringConfirmPassword = confirmPassword.editText?.text.toString()
             val stringURL = inputUrlSignUp.editText?.text.toString()
 
-            signUpPresenter.signUp(stringEmail, stringPassword, stringConPassword, !customServerSignUp.isChecked, stringURL)
+            signUpPresenter.signUp(stringEmail, stringPassword, stringConfirmPassword, !customServerSignUp.isChecked, stringURL, acceptTermsAndConditions.isChecked)
         }
-    }
-
-    override fun onDestroy() {
-        signUpPresenter.onDetach()
-        super.onDestroy()
     }
 
     override fun showForgotPasswordProgress(boolean: Boolean) {

@@ -7,6 +7,7 @@ import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import org.fossasia.susi.ai.R
+import org.fossasia.susi.ai.helper.DateTimeHelper
 import org.fossasia.susi.ai.helper.Utils
 import org.fossasia.susi.ai.rest.responses.susi.Feedback
 import org.fossasia.susi.ai.skills.feedback.adapters.viewholders.AllReviewsViewHolder
@@ -15,7 +16,10 @@ import org.fossasia.susi.ai.skills.feedback.adapters.viewholders.AllReviewsViewH
  *
  * Created by arundhati24 on 27/06/2018
  */
-class AllReviewsAdapter(val context: Context, val feedbackList: List<Feedback>?) :
+class AllReviewsAdapter(
+    val context: Context,
+    private val feedbackList: List<Feedback>?
+) :
         RecyclerView.Adapter<AllReviewsViewHolder>() {
 
     @NonNull
@@ -43,7 +47,7 @@ class AllReviewsAdapter(val context: Context, val feedbackList: List<Feedback>?)
                 }
                 if (feedbackList[position].timestamp != null &&
                         !TextUtils.isEmpty(feedbackList[position].timestamp)) {
-                    val date: String? = getDate(feedbackList[position].timestamp)
+                    val date: String? = DateTimeHelper.formatDate(feedbackList[position].timestamp as String, context.resources.getStringArray(R.array.months))
                     if (date != null) {
                         holder.feedbackDate.text = date
                     } else {
@@ -56,17 +60,5 @@ class AllReviewsAdapter(val context: Context, val feedbackList: List<Feedback>?)
                 }
             }
         }
-    }
-
-    private fun getDate(timestamp: String?): String? {
-        var date: String? = ""
-        if (timestamp != null && !TextUtils.isEmpty(timestamp)) {
-            timestamp.trim()
-            val month = timestamp.substring(5, 7).toInt()
-            date = timestamp.substring(8, 10) + " " +
-                    context.resources.getStringArray(R.array.months)[month - 1].toString() +
-                    ", " + timestamp.substring(0, 4)
-        }
-        return date
     }
 }

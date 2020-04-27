@@ -1,10 +1,9 @@
 package org.fossasia.susi.ai.rest
 
-import org.fossasia.susi.ai.helper.PrefManager
-import org.fossasia.susi.ai.rest.interceptors.TokenInterceptor
-
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import org.fossasia.susi.ai.helper.PrefManager
+import org.fossasia.susi.ai.rest.interceptors.TokenInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -14,7 +13,7 @@ object RetrofitInstance {
         logging.level = HttpLoggingInterceptor.Level.BODY
 
         val httpClient = OkHttpClient.Builder()
-        //Must maintain the order of interceptors here, logging needs to be last.
+        // Must maintain the order of interceptors here, logging needs to be last.
         httpClient.addInterceptor(TokenInterceptor())
         httpClient.addInterceptor(logging)
 

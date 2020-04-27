@@ -1,5 +1,7 @@
 package org.fossasia.susi.ai.login.contract
 
+import android.content.Context
+
 /**
  * The interface for Login Presenter
  *
@@ -15,9 +17,11 @@ interface ILoginPresenter {
 
     fun cancelLogin()
 
-    fun onDetach()
-
     fun requestPassword(email: String, url: String, isPersonalServerChecked: Boolean)
 
     fun cancelSignup()
+
+    fun saveCredential(email: String, password: String)
+
+    fun clientRequest(context: Context)
 }

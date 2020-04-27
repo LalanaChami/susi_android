@@ -12,33 +12,25 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
-
+import butterknife.ButterKnife
 import com.squareup.picasso.Picasso
-
+import io.github.ponnamkarthik.richlinkpreview.MetaData
+import io.github.ponnamkarthik.richlinkpreview.ResponseListener
+import io.github.ponnamkarthik.richlinkpreview.RichPreview
+import io.realm.Realm
+import kotterknife.bindView
 import org.fossasia.susi.ai.R
-import org.fossasia.susi.ai.chat.ParseSusiResponseHelper
 import org.fossasia.susi.ai.chat.adapters.recycleradapters.ChatFeedRecyclerAdapter
 import org.fossasia.susi.ai.data.model.ChatMessage
 import org.fossasia.susi.ai.data.model.WebLink
 import org.fossasia.susi.ai.helper.Constant
 import org.fossasia.susi.ai.helper.PrefManager
-import org.fossasia.susi.ai.rest.ClientBuilder
-import org.fossasia.susi.ai.rest.responses.susi.SkillRatingResponse
-
-import butterknife.ButterKnife
-import io.github.ponnamkarthik.richlinkpreview.MetaData
-import io.github.ponnamkarthik.richlinkpreview.ResponseListener
-import io.github.ponnamkarthik.richlinkpreview.RichPreview
-import io.realm.Realm
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import timber.log.Timber
 
-import kotterknife.bindView
-
-class LinkPreviewViewHolder(itemView: View, listener: MessageViewHolder.ClickListener) : MessageViewHolder(itemView, listener) {
+/**
+ * ViewHolder for drawing link preview item layout.
+ */
+class LinkPreviewViewHolder(itemView: View, listener: ClickListener) : MessageViewHolder(itemView, listener) {
 
     val text: TextView by bindView(R.id.text)
     val backgroundLayout: LinearLayout by bindView(R.id.background_layout)
@@ -48,13 +40,8 @@ class LinkPreviewViewHolder(itemView: View, listener: MessageViewHolder.ClickLis
     val timestampTextView: TextView by bindView(R.id.timestamp)
     val previewLayout: LinearLayout by bindView(R.id.preview_layout)
     val receivedTick: ImageView? by bindView(R.id.received_tick)
-    val thumbsUp: ImageView? by bindView(R.id.thumbs_up)
-    val thumbsDown: ImageView? by bindView(R.id.thumbs_down)
-
     private val realm: Realm = Realm.getDefaultInstance()
     private var url: String? = null
-    private var model: ChatMessage? = null
-
     private val responseListener: ResponseListener by lazy {
         object : ResponseListener {
             override fun onData(data: MetaData?) {
@@ -124,18 +111,18 @@ class LinkPreviewViewHolder(itemView: View, listener: MessageViewHolder.ClickLis
      * @param model the ChatMessage object
      * @param currContext the Context
      */
-    fun setView(model: ChatMessage, viewType: Int, currContext: Context) {
-        this.model = model
+    fun setView(chatModel: ChatMessage, viewType: Int, currContext: Context) {
+        model = chatModel
         val answerText: Spanned = if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            Html.fromHtml(model.content, Html.FROM_HTML_MODE_COMPACT)
+            Html.fromHtml(chatModel.content, Html.FROM_HTML_MODE_COMPACT)
         } else {
-            Html.fromHtml(model.content)
+            Html.fromHtml(chatModel.content)
         }
         text.linksClickable = true
         text.movementMethod = LinkMovementMethod.getInstance()
 
         if (viewType == ChatFeedRecyclerAdapter.USER_WITHLINK) {
-            if (model.isDelivered) {
+            if (chatModel.isDelivered) {
                 receivedTick?.setImageResource(R.drawable.ic_check)
             } else {
                 receivedTick?.setImageResource(R.drawable.ic_clock)
@@ -143,35 +130,35 @@ class LinkPreviewViewHolder(itemView: View, listener: MessageViewHolder.ClickLis
         }
 
         if (viewType != ChatFeedRecyclerAdapter.USER_WITHLINK) {
-            if (model.skillLocation.isNullOrEmpty()) {
-                thumbsUp?.visibility = View.GONE
-                thumbsDown?.visibility = View.GONE
+            if (chatModel.skillLocation.isNullOrEmpty()) {
+                thumbsUp.visibility = View.GONE
+                thumbsDown.visibility = View.GONE
             } else {
-                thumbsUp?.visibility = View.VISIBLE
-                thumbsDown?.visibility = View.VISIBLE
+                thumbsUp.visibility = View.VISIBLE
+                thumbsDown.visibility = View.VISIBLE
             }
 
-            if (model.isPositiveRated || model.isNegativeRated) {
-                thumbsUp?.visibility = View.GONE
-                thumbsDown?.visibility = View.GONE
+            if (chatModel.isPositiveRated || chatModel.isNegativeRated) {
+                thumbsUp.visibility = View.GONE
+                thumbsDown.visibility = View.GONE
             } else {
-                thumbsUp?.setImageResource(R.drawable.thumbs_up_outline)
-                thumbsDown?.setImageResource(R.drawable.thumbs_down_outline)
+                thumbsUp.setImageResource(R.drawable.thumbs_up_outline)
+                thumbsDown.setImageResource(R.drawable.thumbs_down_outline)
             }
 
-            thumbsUp?.setOnClickListener {
-                val skillLocation = model.skillLocation
-                if (!model.isPositiveRated && !model.isNegativeRated && skillLocation != null) {
-                    thumbsUp?.setImageResource(R.drawable.thumbs_up_solid)
+            thumbsUp.setOnClickListener {
+                val skillLocation = chatModel.skillLocation
+                if (!chatModel.isPositiveRated && !chatModel.isNegativeRated && skillLocation != null) {
+                    thumbsUp.setImageResource(R.drawable.thumbs_up_solid)
                     rateSusiSkill(Constant.POSITIVE, skillLocation, currContext)
                     setRating(true, true)
                 }
             }
 
-            thumbsDown?.setOnClickListener {
-                val skillLocation = model.skillLocation
-                if (!model.isPositiveRated && !model.isNegativeRated && skillLocation != null) {
-                    thumbsDown?.setImageResource(R.drawable.thumbs_down_solid)
+            thumbsDown.setOnClickListener {
+                val skillLocation = chatModel.skillLocation
+                if (!chatModel.isPositiveRated && !chatModel.isNegativeRated && skillLocation != null) {
+                    thumbsDown.setImageResource(R.drawable.thumbs_down_solid)
                     rateSusiSkill(Constant.NEGATIVE, skillLocation, currContext)
                     setRating(true, false)
                 }
@@ -179,8 +166,8 @@ class LinkPreviewViewHolder(itemView: View, listener: MessageViewHolder.ClickLis
         }
 
         text.text = answerText
-        timestampTextView.text = model.timeStamp
-        val webLinkData = model.webLinkData
+        timestampTextView.text = chatModel.timeStamp
+        val webLinkData = chatModel.webLinkData
         if (webLinkData == null) {
             previewImageView.visibility = View.GONE
             descriptionTextView.visibility = View.GONE
@@ -189,7 +176,7 @@ class LinkPreviewViewHolder(itemView: View, listener: MessageViewHolder.ClickLis
 
             val richPreview = RichPreview(responseListener)
 
-            val urlList = ChatFeedRecyclerAdapter.extractLinks(model.content!!)
+            val urlList = ChatFeedRecyclerAdapter.extractLinks(chatModel.content!!)
             var url = urlList[0]
             val http = "http://"
             val https = "https://"
@@ -239,60 +226,9 @@ class LinkPreviewViewHolder(itemView: View, listener: MessageViewHolder.ClickLis
 
         previewLayout.setOnClickListener {
             val webpage = Uri.parse(url)
-            val builder = CustomTabsIntent.Builder() //custom tabs intent builder
+            val builder = CustomTabsIntent.Builder() // custom tabs intent builder
             val customTabsIntent = builder.build()
-            customTabsIntent.launchUrl(currContext, webpage) //launching through custom tabs
+            customTabsIntent.launchUrl(currContext, webpage) // launching through custom tabs
         }
-    }
-
-    private fun setRating(what: Boolean, which: Boolean) {
-        val realm = Realm.getDefaultInstance()
-        realm.beginTransaction()
-        if (which) {
-            model?.isPositiveRated = what
-        } else {
-            model?.isNegativeRated = what
-        }
-        realm.commitTransaction()
-    }
-
-    private fun rateSusiSkill(polarity: String, locationUrl: String, context: Context) {
-
-        val queryObject = ParseSusiResponseHelper.getSkillRatingQuery(locationUrl)?.copy(rating = polarity) ?: return
-
-        val call = ClientBuilder.rateSkillCall(queryObject)
-
-        call.enqueue(object : Callback<SkillRatingResponse> {
-            override fun onResponse(call: Call<SkillRatingResponse>, response: Response<SkillRatingResponse>) {
-                if (!response.isSuccessful || response.body() == null) {
-                    when (polarity) {
-                        Constant.POSITIVE -> if (thumbsUp != null) {
-                            thumbsUp?.setImageResource(R.drawable.thumbs_up_outline)
-                            setRating(false, true)
-                        }
-                        Constant.NEGATIVE -> if (thumbsDown != null) {
-                            thumbsDown?.setImageResource(R.drawable.thumbs_down_outline)
-                            setRating(false, false)
-                        }
-                    }
-                    Toast.makeText(context, context.getString(R.string.error_rating), Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onFailure(call: Call<SkillRatingResponse>, t: Throwable) {
-                Timber.e(t)
-                when (polarity) {
-                    Constant.POSITIVE -> if (thumbsUp != null) {
-                        thumbsUp?.setImageResource(R.drawable.thumbs_up_outline)
-                        setRating(false, true)
-                    }
-                    Constant.NEGATIVE -> if (thumbsDown != null) {
-                        thumbsDown?.setImageResource(R.drawable.thumbs_down_outline)
-                        setRating(false, false)
-                    }
-                }
-                Toast.makeText(context, context.getString(R.string.error_rating), Toast.LENGTH_SHORT).show()
-            }
-        })
     }
 }

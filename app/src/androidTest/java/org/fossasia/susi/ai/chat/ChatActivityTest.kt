@@ -10,6 +10,7 @@ import android.support.test.rule.ActivityTestRule
 import android.support.test.rule.GrantPermissionRule
 import android.support.test.runner.AndroidJUnit4
 import android.view.WindowManager
+import java.io.IOException
 import org.fossasia.susi.ai.R
 import org.junit.Before
 import org.junit.FixMethodOrder
@@ -19,7 +20,6 @@ import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
 import timber.log.Timber
-import java.io.IOException
 
 /**
  * Created by collinx on 22-10-2017.
@@ -73,10 +73,10 @@ class ChatActivityTest {
         onView(withId(R.id.rv_chat_feed)).check(matches(isDisplayed()))
 
         // checks if layout container for chat box is present
-        onView(withId(R.id.send_message_layout)).check(matches(isDisplayed()))
+        onView(withId(R.id.sendMessageLayout)).check(matches(isDisplayed()))
 
         // checks if message box is present
-        onView(withId(R.id.et_message)).check(matches(isDisplayed()))
+        onView(withId(R.id.askSusiMessage)).check(matches(isDisplayed()))
 
         // checks if microphone button is present
         onView(withId(R.id.btnSpeak)).check(matches(isDisplayed()))

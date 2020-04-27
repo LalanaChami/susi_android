@@ -15,8 +15,9 @@
     <dimen name="margin_extra_large">40dp</dimen>
     <dimen name="margin_extremely_large">64dp</dimen>
 
-    <!-- dimnesions specifics -->
+    <!-- dimensions specifics -->
 
+    <dimen name="width_null">0dp</dimen>
     <dimen name="height_very_small">1dp</dimen>
     <dimen name="width_very_small">1dp</dimen>
     <dimen name="height_large">45dp</dimen>
@@ -35,6 +36,7 @@
     <dimen name="padding_very_large">32dp</dimen>
     <dimen name="padding_extra_large">40dp</dimen>
     <dimen name="padding_extra_extra_large">48dp</dimen>
+    <dimen name="padding_extra_extra_extra_large">95dp</dimen>
 
     <!-- text size -->
 
@@ -48,6 +50,7 @@
     <dimen name="text_size_very_large">22sp</dimen>
     <dimen name="text_size_extra_large">24sp</dimen>
     <dimen name="text_size_extra_extra_large">40sp</dimen>
+    <dimen name="text_size_extra_extra_extra_large">48sp</dimen>
 
     <!-- Skill details -->
 
@@ -85,7 +88,7 @@
 
     <dimen name="height_image_chat_activity">36dp</dimen>
     <dimen name="width_image_chat_activity">30dp</dimen>
-    
+
     <dimen name="forgot_password_image_size">80dp</dimen>
 
     <dimen name="skill_image_size">80dp</dimen>
@@ -124,5 +127,34 @@
     <!-- Avatar dimensions -->
 
     <dimen name="avatar_size">48dp</dimen>
+
+    <!-- Help dimensions -->
+    <dimen name="card_radius_help">4dp</dimen>
+
+    <!-- Privacy dimensions -->
+    <dimen name="card_radius_privacy">4dp</dimen>
+
+    <!-- Room dimensions -->
+    <dimen name="height_minimum">2dp</dimen>
+    <dimen name="height_room_recycler">20dp</dimen>
+    <dimen name="width_room_recycler">20dp</dimen>
+    <dimen name="height_room_card">250dp</dimen>
+
+    <!-- Manage Devices dimensions -->
+    <dimen name="height_width_spotify">40dp</dimen>
+    <dimen name="border_radius">4dp</dimen>
+    <dimen name="border_width">2dp</dimen>
+    <dimen name="home_dimens">25dp</dimen>
+
+    <!-- About Us dimensions -->
+    <dimen name="card_spacing">6dp</dimen>
+    <dimen name="card_corner_radius">5dp</dimen>
+    <dimen name="about_card_elevation">5dp</dimen>
+    <dimen name="margin_left_right">8dp</dimen>
+    <dimen name="license_icon_size">28dp</dimen>
+    <dimen name="about_icon_padding">8dp</dimen>
+    <dimen name="about_icon_size">34dp</dimen>
+    <dimen name="about_group_text_padding">16dp</dimen>
+    <dimen name="about_group_item_text_size">18sp</dimen>
 
 </resources>

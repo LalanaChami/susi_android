@@ -11,9 +11,8 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.IBinder
 import android.support.v4.app.ActivityCompat
-import timber.log.Timber
-
 import java.lang.ref.WeakReference
+import timber.log.Timber
 
 /**
  * <h1>Helper class to get location of using network and GPS.</h1>
@@ -111,9 +110,9 @@ class LocationHelper
      * Remove listener.
      */
     fun removeListener() {
-        val mContext = weakContext.get()
-        if (mContext != null && locationManager != null) {
-            if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        val context = weakContext.get()
+        if (context != null && locationManager != null) {
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 locationManager?.removeUpdates(this)
             }
         }
